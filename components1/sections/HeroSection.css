@@ -1,0 +1,276 @@
+/* Hero Section Container */
+.hero-section {
+  min-height: 100vh;
+  width: 100%;
+  background: #000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 40px 80px;
+}
+
+.hero-container {
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* Main Title - Centered */
+.hero-title {
+  font-size: 64px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 24px;
+  letter-spacing: -1.5px;
+  line-height: 1.2;
+}
+
+.hero-brand {
+  color: #60a5fa;
+}
+
+/* Subtitle - Centered, Less Bold */
+.hero-subtitle {
+  font-size: 22px;
+  font-weight: 400;
+  text-align: center;
+  color: #a0a0a0;
+  max-width: 800px;
+  margin: 0 auto 80px;
+  line-height: 1.6;
+}
+
+/* Left Content Section - We help you by */
+.hero-content-left {
+  margin-bottom: 80px;
+  padding-left: 60px;
+}
+
+.hero-section-title {
+  font-size: 38px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #60a5fa;
+  letter-spacing: -0.5px;
+}
+
+.hero-description {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #d0d0d0;
+  max-width: 700px;
+}
+
+/* Why Us Section - Left Aligned */
+.hero-why-us {
+  padding-left: 60px;
+}
+
+.hero-section-title-left {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #60a5fa;
+  letter-spacing: -0.5px;
+}
+
+.hero-description-left {
+  font-size: 19px;
+  line-height: 1.7;
+  color: #d0d0d0;
+  max-width: 650px;
+  margin-bottom: 40px;
+}
+
+/* Features List - Centered */
+.hero-features-centered {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  margin-top: 0;
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  max-width: 1100px;
+  flex-wrap: wrap;
+}
+
+.hero-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  max-width: 280px;
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.hero-feature div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hero-feature strong {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  display: block;
+}
+
+.hero-feature span {
+  font-size: 15px;
+  color: #a0a0a0;
+  line-height: 1.5;
+}
+
+/* Horizontal Divider Line */
+.hero-divider {
+  width: 100%;
+  height: 2px;
+  margin-top: 0;
+  background: linear-gradient(to right, #60a5fa 0%, transparent 100%);
+  margin-bottom: 0;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablet and below (768px) */
+@media screen and (max-width: 768px) {
+  .hero-section {
+    padding: 60px 20px 40px;
+    min-height: auto;
+  }
+
+  .hero-title {
+    font-size: 36px;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+
+  .hero-brand {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
+    margin-bottom: 50px;
+    padding: 0;
+    line-height: 1.5;
+    max-width: 100%;
+  }
+
+  .hero-content-left {
+    padding-left: 0;
+    margin-bottom: 50px;
+  }
+
+  .hero-section-title {
+    font-size: 28px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .hero-description {
+    font-size: 15px;
+    line-height: 1.6;
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .hero-why-us {
+    padding-left: 0;
+  }
+
+  .hero-section-title-left {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .hero-description-left {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    max-width: 100%;
+  }
+
+  .hero-features-centered {
+    gap: 30px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-feature {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .feature-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hero-feature strong {
+    font-size: 17px;
+  }
+
+  .hero-feature span {
+    font-size: 14px;
+  }
+}
+
+/* Small Mobile (480px and below) */
+@media screen and (max-width: 480px) {
+  .hero-section {
+    padding: 40px 16px 30px;
+  }
+
+  .hero-title {
+    font-size: 32px;
+    letter-spacing: -0.3px;
+    margin-bottom: 14px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    margin-bottom: 40px;
+    line-height: 1.5;
+  }
+
+  .hero-section-title {
+    font-size: 24px;
+  }
+
+  .hero-section-title-left {
+    font-size: 24px;
+  }
+
+  .hero-description,
+  .hero-description-left {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .hero-features-centered {
+    gap: 25px;
+  }
+
+  .hero-feature strong {
+    font-size: 16px;
+  }
+
+  .hero-feature span {
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,228 @@
+/* Output Box Container */
+.output-box {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Clear History Button */
+.clear-history-wrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.clear-history-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.clear-history-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+.clear-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+}
+
+/* README Card */
+.readme-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 2px solid #334155;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+/* Latest Card - Highlighted */
+.latest-card {
+  border-color: #60a5fa;
+  box-shadow: 0 8px 40px rgba(96, 165, 250, 0.2);
+}
+
+/* Old Card - Faded */
+.old-card {
+  opacity: 0.7;
+  border-color: #1e293b;
+}
+
+.old-card:hover {
+  opacity: 1;
+  border-color: #334155;
+}
+
+/* Loading Card */
+.loading-card {
+  border-color: #60a5fa;
+  box-shadow: 0 8px 40px rgba(96, 165, 250, 0.2);
+}
+
+/* README Header */
+.readme-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.readme-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.readme-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.repo-name {
+  font-size: 13px;
+  color: #94a3b8;
+  font-family: 'Monaco', monospace;
+}
+
+/* README Actions */
+.readme-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.copy-btn,
+.expand-btn {
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+  padding: 6px 12px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-btn:hover,
+.expand-btn:hover {
+  background: rgba(96, 165, 250, 0.2);
+  color: #3b82f6;
+}
+
+.action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.copied-label {
+  font-size: 12px;
+  color: #10b981;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* README Content */
+.readme-content {
+  animation: expandContent 0.3s ease;
+}
+
+@keyframes expandContent {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+  }
+}
+
+.readme-text {
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Monaco', 'Courier New', monospace;
+  margin: 0;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.readme-text::-webkit-scrollbar {
+  width: 6px;
+}
+
+.readme-text::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+.readme-text::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+.readme-text::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+
+/* Skeleton Loading */
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 0px;
+}
+
+.skeleton-line {
+  height: 20px;
+  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-line:nth-child(1) { width: 70%; }
+.skeleton-line:nth-child(2) { width: 95%; }
+.skeleton-line:nth-child(3) { width: 80%; }
+.skeleton-line:nth-child(4) { width: 90%; }
+.skeleton-line:nth-child(5) { width: 75%; }
+
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}

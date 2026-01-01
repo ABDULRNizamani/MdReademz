@@ -1,0 +1,188 @@
+/* Navbar Container - Sticky */
+.navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 80px;
+  background: #000;
+  border-bottom: 1px solid #1a1a1a;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.navbar-container {
+  max-width: 1400px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo */
+.navbar-logo {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -1px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: color 0.3s ease;
+}
+
+.navbar-logo:hover {
+  color: #60a5fa;
+}
+
+/* Nav Links Container */
+.navbar-links {
+  display: flex;
+  gap: 48px;
+}
+
+/* Individual Links */
+.navbar-link {
+  position: relative;
+  font-size: 17px;
+  font-weight: 600;
+  color: #60a5fa;
+  text-decoration: none;
+  padding-bottom: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.3px;
+  transition: color 0.3s ease;
+}
+
+.navbar-link:hover {
+  color: #3b82f6;
+}
+
+/* Underline Effect */
+.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #60a5fa;
+  transition: width 0.3s ease;
+}
+
+.navbar-link:hover::after {
+  width: 100%;
+}
+
+/* Mobile Menu Toggle Button - Hidden on Desktop */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  color: #3b82f6;
+}
+
+.Nav-logo-img {
+  height: 100px;
+  width: auto;
+  margin-bottom: 50px;
+  margin-top: 40px;
+  mix-blend-mode: screen;
+}
+
+/* Mobile Responsive (Below 768px) */
+@media (max-width: 768px) {
+  .navbar {
+    height: 70px;
+  }
+
+  .navbar-container {
+    padding: 0 20px;
+  }
+
+  .navbar-logo {
+    font-size: 22px;
+  }
+
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  /* Hide desktop links, show mobile dropdown */
+  .navbar-links {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: #000;
+    border-bottom: 1px solid #1a1a1a;
+    flex-direction: column;
+    gap: 0;
+    padding: 20px;
+    display: none;
+    animation: slideDown 0.3s ease;
+  }
+
+  .navbar-links.mobile-open {
+    display: flex;
+  }
+
+  .navbar-link {
+    font-size: 15px;
+    padding: 16px 0;
+    width: 100%;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  .navbar-link::after {
+    display: none;
+  }
+
+  .Nav-logo-img {
+   height: 85px;
+   width: auto;
+   margin-bottom: 50px;
+   margin-top: 40px;
+   mix-blend-mode: screen;
+  }
+
+}
+
+/* Small Mobile (Below 480px) */
+@media (max-width: 480px) {
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .navbar-logo {
+    font-size: 20px;
+  }
+
+  .navbar-link {
+    font-size: 14px;
+  }
+}
+
+/* Slide down animation for mobile menu */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
