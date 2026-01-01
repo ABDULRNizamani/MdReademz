@@ -8,7 +8,7 @@ export default function HeroSection() {
         
         {/* Main Headline - Centered */}
         <h1 className="hero-title">
-          Welcome to <span className="hero-brand">ReadmeAI</span>
+          Welcome to <span className="hero-brand">MdReademz</span>
         </h1>
         
         {/* Subheadline - Centered, Less Bold */}
