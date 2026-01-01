@@ -6,7 +6,10 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://mdreademz.vercel.app'), // Update with your actual domain
+  verification: {
+    google: "s_2M2MKkkIk8sFnEI9angdfTvyCe2qTxl9a5VTt6JqA"
+  },
+  metadataBase: new URL('https://mreademz.vercel.app'), // Update with your actual domain
   title: {
     default: 'MdReademz - AI-Powered README Generator | Create Professional README Files',
     template: '%s | MdReademz'
