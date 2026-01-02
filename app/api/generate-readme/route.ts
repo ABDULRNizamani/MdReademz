@@ -71,11 +71,13 @@ export async function POST(request: NextRequest) {
     let readme: string
     try {
       readme = await callGroq(prompt)
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Groq API Error:', error.message)
       return Response.json({
         error: "AI service temporarily unavailable",
         suggestion: "Please try again in a moment",
-        type: "ai_error"
+        type: "ai_error",
+        details: error.message
       }, { status: 500 })
     }
 
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
+    console.error('Server Error:', error)
     return Response.json({
       error: "Something went wrong",
       suggestion: "Please try again",
@@ -211,6 +214,11 @@ Make it professional and ready to use.`
 }
 
 async function callGroq(prompt: string): Promise<string> {
+  // Check if API key is configured
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not configured in environment variables')
+  }
+
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -228,8 +236,22 @@ async function callGroq(prompt: string): Promise<string> {
     })
   })
 
-  if (!response.ok) throw new Error('GROQ_ERROR')
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    console.error('Groq API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    })
+    throw new Error(`GROQ_ERROR: ${response.status} - ${JSON.stringify(errorData)}`)
+  }
+  
   const data = await response.json()
+  
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from Groq API')
+  }
+  
   let readme = data.choices[0].message.content
   readme = readme.replace(/^```markdown\n?/i, '').replace(/\n?```$/, '')
   return readme.trim()
