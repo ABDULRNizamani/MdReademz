@@ -18,6 +18,9 @@ export default function GeneratorSection() {
   const [lastInput, setLastInput] = useState('')
   const [hasGitHubUrl, setHasGitHubUrl] = useState(false)
 
+  const [sessionId] = useState(() => `session-${Date.now()}-${Math.random()}`)
+
+
   const handleSubmit = async () => {
     if (!input.trim()) return
     
@@ -32,14 +35,8 @@ export default function GeneratorSection() {
     setInput('')
     
     // Get the current README for iterations
-    const currentReadme = readmeHistory.length > 0 ? readmeHistory[0].content : undefined
     
-    const sessionContext = {
-      hasGitHubUrl: currentHasUrl,
-      isIteration: hasGitHubUrl && currentHasUrl && readmeHistory.length > 0,
-      previousInput: lastInput,
-      currentReadme: currentReadme  // ← FIXED: Added this!
-    }
+    
 
     try {
       const response = await fetch('/api/generate-readme', {
@@ -47,7 +44,7 @@ export default function GeneratorSection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userInput,
-          sessionContext
+          sessionId: sessionId
         })
       })
 

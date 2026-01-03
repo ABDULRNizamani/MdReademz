@@ -1,3 +1,4 @@
+import { error } from 'console'
 import { NextRequest } from 'next/server'
 
 // ============= ENVIRONMENT VARIABLES =============
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
     if (!validation.valid) {
       console.log('❌ Validation failed:', validation.reason)
       // TODO: Return error response with validation.reason, status 400
+      return Response.json({
+      error: validation.reason,
+      type: "Failed validation"
+     }, {status: 400})
     }
     
     // Extract GitHub URLs from input
@@ -40,6 +45,10 @@ export async function POST(request: NextRequest) {
     if (urls.length > 1) {
       console.log('❌ Multiple URLs detected')
       // TODO: Return error "Please provide only one GitHub URL at a time", status 400
+     return Response.json({
+      error: "please provide one url at a time",
+      type: "multiple urls"
+     }, {status: 400})
     }
     
     // Parse URL if found
@@ -53,6 +62,11 @@ export async function POST(request: NextRequest) {
       if (!parsedUrl) {
         console.log('❌ Invalid URL format')
         // TODO: Return error "Invalid GitHub URL format", status 400
+        return Response.json({
+          error: "Invalid Github Url",
+          type: "invalid url"
+
+        }, {status: 400})
       }
       
       // Remove URL from text
