@@ -1,278 +1,453 @@
 import { NextRequest } from 'next/server'
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY 
+// ============= ENVIRONMENT VARIABLES =============
+const GROQ_API_KEY = process.env.GROQ_API_KEY
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN
 
-const repoCache = new Map<string, { data: any; timestamp: number }>()
-const CACHE_DURATION = 60 * 60 * 1000
+// ============= CONSTANTS =============
+const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
 
+// In-memory session storage (temporary - will be replaced with proper storage)
+const sessionStore = new Map<string, { previousReadme: string; timestamp: number }>()
+
+// ============= MAIN HANDLER =============
 export async function POST(request: NextRequest) {
   try {
+    
+    // ========================================
+    // STAGE 1: INPUT HANDLING & PARSING
+    // ========================================
+    console.log('=== STAGE 1: INPUT HANDLING ===')
+    
+    // Get user input from request
     const body = await request.json()
-    const { message, sessionContext } = body
-
+    const { message, sessionId } = body // sessionId to track user's session
+    console.log('Raw input:', message)
+    console.log('Session ID:', sessionId)
+    
+    // Validate input
     const validation = validateInput(message)
     if (!validation.valid) {
-      return Response.json({
-        error: validation.reason,
-        suggestion: "Please provide a GitHub URL or describe your project",
-        type: "invalid_input"
-      }, { status: 400 })
+      console.log('❌ Validation failed:', validation.reason)
+      // TODO: Return error response with validation.reason, status 400
     }
-
-    const githubUrlMatch = message.match(/github\.com\/([\w-]+)\/([\w.-]+)/)
-    let repoData = null
-    let loadingType: 'analyzing' | 'updating' | 'template' = 'template'
-
-    if (githubUrlMatch) {
-      const owner = githubUrlMatch[1]
-      const repo = githubUrlMatch[2].replace(/\.git$/, '')
-      const repoKey = `${owner}/${repo}`
-
-      const cached = repoCache.get(repoKey)
-      if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
-        repoData = cached.data
-      } else {
-        try {
-          repoData = await fetchGitHubRepo(owner, repo)
-          repoCache.set(repoKey, { data: repoData, timestamp: Date.now() })
-        } catch (error: any) {
-          if (error.message === 'NOT_FOUND') {
-            return Response.json({
-              error: "Repository not found or is private",
-              suggestion: "Check the URL or make sure the repository is public",
-              type: "repo_not_found"
-            }, { status: 404 })
-          }
-          
-          return Response.json({
-            error: "Failed to fetch repository",
-            suggestion: "GitHub might be temporarily unavailable",
-            type: "github_error"
-          }, { status: 500 })
-        }
+    
+    // Extract GitHub URLs from input
+    const urls = extractGitHubUrls(message)
+    console.log('URLs found:', urls.length, urls)
+    
+    // Check for multiple URLs
+    if (urls.length > 1) {
+      console.log('❌ Multiple URLs detected')
+      // TODO: Return error "Please provide only one GitHub URL at a time", status 400
+    }
+    
+    // Parse URL if found
+    let parsedUrl: { owner: string; repo: string } | null = null
+    let userText = message
+    
+    if (urls.length === 1) {
+      parsedUrl = parseGitHubUrl(urls[0])
+      console.log('Parsed URL:', parsedUrl)
+      
+      if (!parsedUrl) {
+        console.log('❌ Invalid URL format')
+        // TODO: Return error "Invalid GitHub URL format", status 400
       }
-
-      loadingType = sessionContext?.isIteration ? 'updating' : 'analyzing'
+      
+      // Remove URL from text
+      userText = message.replace(urls[0], '').trim()
+      console.log('User text (without URL):', userText)
+    }
+    
+    // Get previous README from session
+    const session = getSession(sessionId)
+    const previousReadme = session?.previousReadme || null
+    console.log('Has previous README:', !!previousReadme)
+    
+    // Determine generation mode
+    let mode: 'new_with_url' | 'new_template' | 'iteration'
+    
+    if (parsedUrl) {
+      // Has URL: always generate new (replace old if exists)
+      mode = 'new_with_url'
     } else {
-      loadingType = sessionContext?.isIteration ? 'updating' : 'template'
+      // No URL: template or iteration
+      mode = previousReadme ? 'iteration' : 'new_template'
     }
-
-    const instructions = githubUrlMatch 
-      ? message.replace(githubUrlMatch[0], '').trim()
-      : message
-
-    const prompt = buildPrompt(
-      repoData, 
-      instructions, 
-      sessionContext?.isIteration || false, 
-      sessionContext?.currentReadme
-    )
-
-    let readme: string
-    try {
-      readme = await callGroq(prompt)
-    } catch (error: any) {
-      console.error('Groq API Error:', error.message)
-      return Response.json({
-        error: "AI service temporarily unavailable",
-        suggestion: "Please try again in a moment",
-        type: "ai_error",
-        details: error.message
-      }, { status: 500 })
+    
+    console.log('✅ Mode determined:', mode)
+    
+    
+    // ========================================
+    // STAGE 2: GITHUB API DATA EXTRACTION
+    // ========================================
+    console.log('\n=== STAGE 2: GITHUB API ===')
+    
+    let repoData = null
+    
+    if (parsedUrl) {
+      console.log(`Fetching: ${parsedUrl.owner}/${parsedUrl.repo}`)
+      
+      try {
+        // TODO: Call fetchGitHubRepo() to get repository data
+        repoData = await fetchGitHubRepo(parsedUrl.owner, parsedUrl.repo)
+        console.log('✅ Repo data fetched:', repoData.name)
+      } catch (error: any) {
+        console.log('❌ GitHub fetch failed:', error.message)
+        
+        // Handle specific errors
+        if (error.message === 'NOT_FOUND') {
+          // TODO: Return error "Repository not found", status 404
+        }
+        if (error.message === 'FORBIDDEN') {
+          // TODO: Return error "Cannot access private repository", status 403
+        }
+        // TODO: Return generic error "GitHub API error", status 500
+      }
+    } else {
+      console.log('⏭️  No URL provided, skipping GitHub API')
     }
-
-    return Response.json({
-      readme,
-      loadingType,
-      hasRepoData: !!repoData,
-      repoName: repoData?.name || null
+    
+    
+    // ========================================
+    // STAGE 3: DATA FORMATTING & CACHING
+    // ========================================
+    console.log('\n=== STAGE 3: DATA FORMATTING ===')
+    
+    let formattedData = null
+    
+    if (repoData) {
+      // TODO: Call formatRepoData() to clean and structure the data
+      formattedData = formatRepoData(repoData, userText)
+      console.log('✅ Data formatted:', formattedData.repoName)
+    } else {
+      console.log('⏭️  No repo data to format')
+    }
+    
+    
+    // ========================================
+    // STAGE 4: PROMPT ENGINEERING
+    // ========================================
+    console.log('\n=== STAGE 4: PROMPT BUILDING ===')
+    
+    // Build the prompt based on mode
+    const prompt = buildPrompt({
+      mode,
+      repoData: formattedData,
+      userText,
+      previousReadme
     })
-
+    
+    console.log('✅ Prompt built, length:', prompt.length)
+    console.log('Prompt preview:', prompt.substring(0, 200) + '...')
+    
+    
+    // ========================================
+    // STAGE 5: GROQ API CALL
+    // ========================================
+    console.log('\n=== STAGE 5: GROQ API ===')
+    
+    let generatedReadme: string
+    
+    try {
+      // TODO: Call callGroq() to generate README
+      generatedReadme = await callGroq(prompt)
+      console.log('✅ README generated, length:', generatedReadme.length)
+    } catch (error: any) {
+      console.log('❌ Groq API failed:', error.message)
+      // TODO: Return error "AI service unavailable", status 500
+    }
+    
+    
+    // ========================================
+    // STAGE 6: SESSION UPDATE & RETURN
+    // ========================================
+    console.log('\n=== STAGE 6: SAVE & RETURN ===')
+    
+    // Save to session
+    saveSession(sessionId, generatedReadme)
+    console.log('✅ Session updated')
+    
+    // Return success response
+    return Response.json({
+      success: true,
+      readme: generatedReadme,
+      metadata: {
+        mode,
+        hasRepoData: !!repoData,
+        repoName: repoData?.name || null
+      }
+    })
+    
   } catch (error: any) {
-    console.error('Server Error:', error)
+    console.error('💥 Unexpected Error:', error)
     return Response.json({
       error: "Something went wrong",
-      suggestion: "Please try again",
-      type: "server_error"
+      type: "server_error",
+      details: error.message
     }, { status: 500 })
   }
 }
 
+
+// ============= STAGE 1 HELPERS =============
+
+/**
+ * Validates user input
+ */
 function validateInput(input: string): { valid: boolean; reason?: string } {
   const trimmed = input.trim()
-  if (trimmed.length < 5) return { valid: false, reason: "Input is too short" }
-  if (!/[a-zA-Z]/.test(trimmed)) return { valid: false, reason: "Invalid input" }
-  if (/(.)\1{15,}/.test(trimmed)) return { valid: false, reason: "Invalid input" }
+  
+  // Check 1: Minimum length
+  if (trimmed.length < 5) {
+    // TODO: Return { valid: false, reason: "Input too short" }
+  }
+  
+  // Check 2: Must contain letters
+  if (!/[a-zA-Z]/.test(trimmed)) {
+    // TODO: Return { valid: false, reason: "Must contain letters" }
+  }
+  
+  // Check 3: No spam patterns
+  if (/(.)\1{15,}/.test(trimmed)) {
+    // TODO: Return { valid: false, reason: "Invalid pattern" }
+  }
+  
   return { valid: true }
 }
 
+/**
+ * Extracts all GitHub URLs from text
+ * Returns array of URLs (empty if none found)
+ */
+function extractGitHubUrls(text: string): string[] {
+  // Regex to match GitHub URLs
+  // Matches: github.com/owner/repo with optional http(s), www, /, .git
+  const regex = /(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/[\w.-]+(?:\.git)?/gi
+  
+  // TODO: Use text.match(regex) to find all URLs
+  // Remember: match() returns null if no matches found
+  
+  return []
+}
+
+/**
+ * Parses GitHub URL to extract owner and repo
+ * Returns { owner, repo } or null if invalid
+ */
+function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
+  // Regex with capture groups to extract owner and repo
+  const match = url.match(/github\.com\/([\w-]+)\/([\w.-]+?)(?:\.git)?(?:\/|$)/i)
+  
+  if (!match) return null
+  
+  const owner = match[1]
+  const repo = match[2]
+  
+  // Validate format: only letters, numbers, hyphens, underscores
+  const validPattern = /^[\w-]+$/
+  
+  // TODO: Check if owner and repo match validPattern
+  // If not, return null
+  
+  return { owner, repo }
+}
+
+
+// ============= STAGE 2 HELPERS =============
+
+/**
+ * Fetches repository data from GitHub API
+ * Throws errors for: NOT_FOUND, FORBIDDEN, GITHUB_ERROR
+ */
 async function fetchGitHubRepo(owner: string, repo: string) {
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'README-Generator'
-    }
-  })
+  // TODO: Build GitHub API URL
+  const url = `https://api.github.com/repos/${owner}/${repo}`
+  
+  // TODO: Make fetch request with headers
+  // Headers needed:
+  // - 'Accept': 'application/vnd.github.v3+json'
+  // - 'Authorization': `Bearer ${GITHUB_TOKEN}` (if token exists)
+  // - 'User-Agent': 'README-Generator'
+  
+  // TODO: Handle response status codes:
+  // - 404 → throw new Error('NOT_FOUND')
+  // - 403 → throw new Error('FORBIDDEN')  
+  // - Other errors → throw new Error('GITHUB_ERROR')
+  
+  // TODO: Parse JSON response
+  
+  // TODO: Extract and return these fields:
+  // - name
+  // - full_name
+  // - description (or "No description provided" if null)
+  // - language (or "Not specified" if null)
+  // - stargazers_count
+  // - forks_count
+  // - topics (array)
+  // - license?.name (or null)
+  // - homepage (or null)
+  // - default_branch
+  
+  return {}
+}
 
-  if (response.status === 404) throw new Error('NOT_FOUND')
-  if (!response.ok) throw new Error('GITHUB_ERROR')
 
-  const repoInfo = await response.json()
-  let dependencies: string[] = []
+// ============= STAGE 3 HELPERS =============
 
-  try {
-    const pkgResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
-      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'README-Generator' }}
-    )
-    if (pkgResponse.ok) {
-      const pkgData = await pkgResponse.json()
-      const pkgContent = JSON.parse(Buffer.from(pkgData.content, 'base64').toString())
-      dependencies = Object.keys(pkgContent.dependencies || {})
-    }
-  } catch {}
-
+/**
+ * Formats raw GitHub data for prompt
+ * Handles null/empty values
+ */
+function formatRepoData(repoData: any, userText: string) {
   return {
-    name: repoInfo.name,
-    fullName: repoInfo.full_name,
-    description: repoInfo.description || 'No description provided',
-    language: repoInfo.language || 'Not specified',
-    stars: repoInfo.stargazers_count || 0,
-    forks: repoInfo.forks_count || 0,
-    topics: repoInfo.topics || [],
-    license: repoInfo.license?.name || null,
-    homepage: repoInfo.homepage || null,
-    dependencies
+    repoName: repoData.name,
+    fullName: repoData.full_name,
+    description: repoData.description || "No description provided",
+    language: repoData.language || "Language not detected",
+    stars: repoData.stargazers_count || 0,
+    forks: repoData.forks_count || 0,
+    topics: repoData.topics || [],
+    license: repoData.license || "No license specified",
+    homepage: repoData.homepage || null,
+    defaultBranch: repoData.default_branch || "main",
+    userText: userText
   }
 }
 
-function buildPrompt(repoData: any, instructions: string, isIteration: boolean, currentReadme?: string): string {
-  // If it's an iteration and we have current README, update it
-  if (isIteration && currentReadme && currentReadme.length > 0) {
-    return `You are a professional README editor.
-
-Current README:
-\`\`\`markdown
-${currentReadme}
-\`\`\`
-
-User's update request: "${instructions}"
-
-Apply the requested changes to the README above.
-Return the COMPLETE updated README with all changes applied, not just the modified parts.
-Do not include markdown code fences in your response, just the raw README content.`
+/**
+ * Get session data (previous README)
+ * Returns null if not found or expired
+ */
+function getSession(sessionId: string): { previousReadme: string; timestamp: number } | null {
+  if (!sessionId) return null
+  
+  const session = sessionStore.get(sessionId)
+  if (!session) return null
+  
+  // Check if expired (30 minutes)
+  const isExpired = Date.now() - session.timestamp > SESSION_DURATION
+  
+  if (isExpired) {
+    // TODO: Delete expired session from sessionStore
+    return null
   }
-
-  // Generate new README
-  if (repoData) {
-    if (instructions) {
-      return `You are a professional README generator.
-
-Repository Information:
-- Name: ${repoData.name}
-- Description: ${repoData.description}
-- Language: ${repoData.language}
-- Stars: ${repoData.stars}
-${repoData.dependencies.length > 0 ? `- Dependencies: ${repoData.dependencies.join(', ')}` : ''}
-
-User's Requirements: "${instructions}"
-
-Generate a complete, professional README.md that follows the user's requirements.`
-    } else {
-      return `You are a professional README generator.
-
-Repository Information:
-- Name: ${repoData.name}
-- Description: ${repoData.description}
-- Language: ${repoData.language}
-- Stars: ${repoData.stars}
-${repoData.dependencies.length > 0 ? `- Dependencies: ${repoData.dependencies.join(', ')}` : ''}
-
-Generate a comprehensive README.md with:
-1. Project title and description
-2. Key features
-3. Installation instructions
-4. Usage examples
-5. Contributing guidelines
-
-Make it clear, well-structured, and developer-friendly.`
-    }
-  } else {
-    return `You are a professional README generator.
-
-The user described their project: "${instructions}"
-
-Generate a README.md template based on this description. Include:
-1. Project title
-2. Description
-3. Installation instructions
-4. Usage examples
-5. Features
-
-Make it professional and ready to use.`
-  }
+  
+  return session
 }
 
+/**
+ * Save README to session
+ */
+function saveSession(sessionId: string, readme: string) {
+  if (!sessionId) return
+  
+  // TODO: Save to sessionStore with current timestamp
+  // Structure: { previousReadme: readme, timestamp: Date.now() }
+}
+
+
+// ============= STAGE 4 HELPERS =============
+
+/**
+ * Builds the prompt for Groq based on mode and available data
+ * 
+ * CRITICAL: Prompt must prevent fake info generation
+ */
+function buildPrompt(params: {
+  mode: 'new_with_url' | 'new_template' | 'iteration'
+  repoData: any
+  userText: string
+  previousReadme: string | null
+}): string {
+  
+  const { mode, repoData, userText, previousReadme } = params
+  
+  // TODO: Build system prompt with constraints:
+  // - "You are a professional README generator"
+  // - "Use ONLY the provided data"
+  // - "Do NOT invent: contact info, URLs, features, installation commands"
+  // - "Use generic placeholders based on language for unknown info"
+  // - "Leave sections empty if data not provided"
+  
+  if (mode === 'iteration' && previousReadme) {
+    // TODO: Build iteration prompt
+    // Include: previousReadme + userText (modification request)
+    // Instruction: "Update the README based on the request"
+    return ""
+  }
+  
+  if (mode === 'new_with_url' && repoData) {
+    // TODO: Build new README prompt with repo data
+    // Include all formatted repo data
+    // Include userText as additional requirements (if exists)
+    // Sections to include: Title, Description, Installation, Usage, Contributing, License
+    // Conditional sections: Topics (if exists), Homepage (if exists)
+    return ""
+  }
+  
+  if (mode === 'new_template') {
+    // TODO: Build template prompt
+    // Include: userText (project description)
+    // Generate generic template structure
+    return ""
+  }
+  
+  return ""
+}
+
+
+// ============= STAGE 5 HELPERS =============
+
+/**
+ * Calls Groq API to generate README
+ * Returns generated markdown string
+ */
 async function callGroq(prompt: string): Promise<string> {
-  // Check if API key is configured
+  // Check if API key configured
   if (!GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY is not configured in environment variables')
-  }
-
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: 'You are a professional README generator. Generate clean markdown without code fences.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    })
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    console.error('Groq API Error:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData
-    })
-    throw new Error(`GROQ_ERROR: ${response.status} - ${JSON.stringify(errorData)}`)
+    throw new Error('GROQ_API_KEY not configured')
   }
   
-  const data = await response.json()
+  // TODO: Make POST request to Groq API
+  // URL: 'https://api.groq.com/openai/v1/chat/completions'
+  // Headers:
+  // - 'Authorization': `Bearer ${GROQ_API_KEY}`
+  // - 'Content-Type': 'application/json'
   
-  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-    throw new Error('Invalid response from Groq API')
-  }
+  // TODO: Body (JSON.stringify):
+  // {
+  //   model: 'llama-3.3-70b-versatile',
+  //   messages: [
+  //     { role: 'system', content: 'You are a README generator. Output only markdown.' },
+  //     { role: 'user', content: prompt }
+  //   ],
+  //   temperature: 0.7,
+  //   max_tokens: 2000
+  // }
   
-  let readme = data.choices[0].message.content
-  readme = readme.replace(/^```markdown\n?/i, '').replace(/\n?```$/, '')
-  return readme.trim()
+  // TODO: Handle response errors (throw Error)
+  
+  // TODO: Parse JSON and extract: data.choices[0].message.content
+  
+  // TODO: Clean response:
+  // - Remove markdown code fences: ```markdown and ```
+  // - Trim whitespace
+  
+  return ""
 }
 
+
+// ============= CLEANUP =============
+
+// Clean expired sessions every 30 minutes
 setInterval(() => {
   const now = Date.now()
-  for (const [key, value] of repoCache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION) {
-      repoCache.delete(key)
+  for (const [sessionId, session] of sessionStore.entries()) {
+    if (now - session.timestamp > SESSION_DURATION) {
+      sessionStore.delete(sessionId)
+      console.log('🧹 Cleaned expired session:', sessionId)
     }
   }
 }, 30 * 60 * 1000)
-
-export async function GET() {
-  const apiKey = process.env.GROQ_API_KEY
-  
-  return Response.json({ 
-    message: 'API Route Test',
-    apiKeyConfigured: !!apiKey,
-    apiKeyPreview: apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET',
-    envVars: Object.keys(process.env).filter(k => k.includes('GROQ'))
-  })
-}
