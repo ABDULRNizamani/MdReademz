@@ -113,11 +113,24 @@ export async function POST(request: NextRequest) {
         // Handle specific errors
         if (error.message === 'NOT_FOUND') {
           // TODO: Return error "Repository not found", status 404
+          return Response.json({
+            error: "Repository not found please check the url",
+            type: "repositoy not found"
+          }, {status: 404})
         }
         if (error.message === 'FORBIDDEN') {
           // TODO: Return error "Cannot access private repository", status 403
+          return Response.json({
+            error: "your repository is private we can't access it",
+            type: "private repo"
+          }, {status: 403})
         }
         // TODO: Return generic error "GitHub API error", status 500
+          return Response.json({
+            error: "api error try again later",
+            type: "github error"
+          }, {status: 500})
+          
       }
     } else {
       console.log('⏭️  No URL provided, skipping GitHub API')
