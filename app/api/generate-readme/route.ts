@@ -229,16 +229,19 @@ function validateInput(input: string): { valid: boolean; reason?: string } {
   // Check 1: Minimum length
   if (trimmed.length < 5) {
     // TODO: Return { valid: false, reason: "Input too short" }
+    return { valid: false, reason: "Input too short" }
   }
   
   // Check 2: Must contain letters
   if (!/[a-zA-Z]/.test(trimmed)) {
     // TODO: Return { valid: false, reason: "Must contain letters" }
+     return { valid: false, reason: "Must contain letters" }
   }
   
   // Check 3: No spam patterns
   if (/(.)\1{15,}/.test(trimmed)) {
     // TODO: Return { valid: false, reason: "Invalid pattern" }
+    return { valid: false, reason: "Invalid pattern" }
   }
   
   return { valid: true }
@@ -256,7 +259,7 @@ function extractGitHubUrls(text: string): string[] {
   // TODO: Use text.match(regex) to find all URLs
   // Remember: match() returns null if no matches found
   
-  return []
+  return text.match(regex) || []
 }
 
 /**
@@ -277,6 +280,13 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   
   // TODO: Check if owner and repo match validPattern
   // If not, return null
+
+  const check1 = validPattern.test(owner)
+  const check2 = validPattern.test(repo) 
+
+  if (!check1 || !check2){
+    return null
+  }
   
   return { owner, repo }
 }
