@@ -182,9 +182,13 @@ export async function POST(request: NextRequest) {
       generatedReadme = await callGroq(prompt)
       console.log('✅ README generated, length:', generatedReadme.length)
     } catch (error: any) {
-      console.log('❌ Groq API failed:', error.message)
-      // TODO: Return error "AI service unavailable", status 500
-    }
+       console.log('❌ Groq API failed:', error.message)
+       // TODO: Return error "AI service unavailable", status 500
+       return Response.json({
+         error:"Ai service unavailable",
+         type:"unavailale service"
+       },{status: 500})
+      }
     
     
     // ========================================
@@ -573,37 +577,45 @@ function buildPrompt(params: {
  * Returns generated markdown string
  */
 async function callGroq(prompt: string): Promise<string> {
-  // Check if API key configured
+  // Check if API key is configured
   if (!GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY not configured')
   }
   
-  // TODO: Make POST request to Groq API
-  // URL: 'https://api.groq.com/openai/v1/chat/completions'
-  // Headers:
-  // - 'Authorization': `Bearer ${GROQ_API_KEY}`
-  // - 'Content-Type': 'application/json'
+  // Make POST request to Groq API
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'You are a README generator. Output only markdown.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    })
+  })
   
-  // TODO: Body (JSON.stringify):
-  // {
-  //   model: 'llama-3.3-70b-versatile',
-  //   messages: [
-  //     { role: 'system', content: 'You are a README generator. Output only markdown.' },
-  //     { role: 'user', content: prompt }
-  //   ],
-  //   temperature: 0.7,
-  //   max_tokens: 2000
-  // }
+  // Handle errors
+  if (!response.ok) {
+    throw new Error(`GROQ_ERROR: ${response.status}`)
+  }
   
-  // TODO: Handle response errors (throw Error)
+  // Parse JSON response
+  const data = await response.json()
   
-  // TODO: Parse JSON and extract: data.choices[0].message.content
+  // Extract the generated content
+  let readme = data.choices[0].message.content
   
-  // TODO: Clean response:
-  // - Remove markdown code fences: ```markdown and ```
-  // - Trim whitespace
+  // Clean up: remove markdown code fences if present
+  readme = readme.replace(/^```markdown\n?/i, '').replace(/\n?```$/, '')
   
-  return ""
+  // Trim whitespace
+  return readme.trim()
 }
 
 
