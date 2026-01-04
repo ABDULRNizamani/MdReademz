@@ -403,6 +403,7 @@ function getSession(sessionId: string): { previousReadme: string; timestamp: num
   
   if (isExpired) {
     // TODO: Delete expired session from sessionStore
+    sessionStore.delete(sessionId)
     return null
   }
   
@@ -417,6 +418,13 @@ function saveSession(sessionId: string, readme: string) {
   
   // TODO: Save to sessionStore with current timestamp
   // Structure: { previousReadme: readme, timestamp: Date.now() }
+  const obj = {
+    previousReadme: readme,
+    timestamp: Date.now()
+  }
+
+  sessionStore.set(sessionId, obj)
+  
 }
 
 
