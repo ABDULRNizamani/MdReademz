@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       try {
         // TODO: Call fetchGitHubRepo() to get repository data
         repoData = await fetchGitHubRepo(parsedUrl.owner, parsedUrl.repo)
-        console.log('✅ Repo data fetched:', repoData.name)
+        console.log('✅ Repo data fetched:')
       } catch (error: any) {
         console.log('❌ GitHub fetch failed:', error.message)
         
@@ -307,13 +307,35 @@ async function fetchGitHubRepo(owner: string, repo: string) {
   // - 'Accept': 'application/vnd.github.v3+json'
   // - 'Authorization': `Bearer ${GITHUB_TOKEN}` (if token exists)
   // - 'User-Agent': 'README-Generator'
+
+  const headers: any = {
+    'Accept': 'application/vnd.github.v3+json',
+   'User-Agent': 'README-Generator'
+  }
+
+  if (GITHUB_TOKEN) {
+    headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`
+  }
+
+  const res = await fetch(url, {headers: headers})
   
   // TODO: Handle response status codes:
   // - 404 → throw new Error('NOT_FOUND')
   // - 403 → throw new Error('FORBIDDEN')  
   // - Other errors → throw new Error('GITHUB_ERROR')
+
+    if(res.status === 404){
+      throw new Error('NOT_FOUND')
+    } else if(res.status === 403){
+      throw new Error('FORBIDDEN')
+    } else if(!res.ok){
+      throw new Error ('GITHUB_ERROR')
+    }
   
   // TODO: Parse JSON response
+
+  let repoData = await res.json()
+  console.log('GitHub API response:', repoData)
   
   // TODO: Extract and return these fields:
   // - name
@@ -326,8 +348,21 @@ async function fetchGitHubRepo(owner: string, repo: string) {
   // - license?.name (or null)
   // - homepage (or null)
   // - default_branch
+
+  const Extraction = {
+    name: repoData.name,
+    full_name: repoData.full_name,
+    description: repoData.description || 'No description provided',
+    language: repoData.language || "Not specified",
+    stargazers_count: repoData.stargazers_count,
+    forks_count: repoData.forks_count,
+    topics: repoData.topics,
+    license: repoData.license?.name,
+    homepage: repoData.homepage || null,
+    default_branch: repoData.default_branch
+  }
   
-  return {}
+  return Extraction
 }
 
 
