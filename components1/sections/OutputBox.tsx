@@ -1,70 +1,46 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Copy, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { useState } from 'react'
+import { Copy, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import './OutputBox.css'
 
-export interface ReadmeVersion {
-  id: number
-  content: string
-  timestamp: Date
-  input: string
-  repoName?: string | null
-}
-
 interface OutputBoxProps {
-  history: ReadmeVersion[]
+  readme: string | null
+  repoName: string | null
   isLoading: boolean
-  
-  onClearHistory: () => void
+  onClear: () => void
 }
 
 export default function OutputBox({ 
-  history, 
+  readme, 
+  repoName,
   isLoading, 
-  
-  onClearHistory 
+  onClear 
 }: OutputBoxProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
-  const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  const toggleExpand = (id: number) => {
-    setExpandedIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }
-
-  const handleCopy = (content: string, id: number) => {
+  const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
-
-
-  const sortedHistory = [...history].reverse()
 
   return (
     <div className="output-box">
       
-      {history.length > 0 && (
+      {readme && (
         <div className="clear-history-wrapper">
           <Button
-            onClick={onClearHistory}
+            onClick={onClear}
             variant="ghost"
             size="sm"
             className="clear-history-btn"
           >
             <X className="clear-icon" />
-            Clear History
+            Clear
           </Button>
         </div>
       )}
@@ -81,75 +57,33 @@ export default function OutputBox({
         </Card>
       )}
 
-      {sortedHistory.map((version, index) => {
-        const isLatest = index === 0
-        const isExpanded = isLatest || expandedIds.has(version.id)
-        const isCopied = copiedId === version.id
-
-        return (
-          <Card 
-            key={version.id} 
-            className={`readme-card ${isLatest ? 'latest-card' : 'old-card'}`}
-          >
-            <div className="readme-header" onClick={() => !isLatest && toggleExpand(version.id)}>
-              <div className="readme-info">
-                <span className="readme-label">
-                  {isLatest ? ' ' : `📄 Previous`}
-                </span>
-                {version.repoName && (
-                  <span className="repo-name">{version.repoName}</span>
-                )}
-              </div>
-              
-              <div className="readme-actions">
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleCopy(version.content, version.id)
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="copy-btn"
-                >
-                  <Copy className="action-icon" />
-                  {isCopied && <span className="copied-label">Copied!</span>}
-                </Button>
-
-                {!isLatest && (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleExpand(version.id)
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="expand-btn"
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="action-icon" />
-                    ) : (
-                      <ChevronDown className="action-icon" />
-                    )}
-                  </Button>
-                )}
-              </div>
+      {readme && !isLoading && (
+        <Card className="readme-card latest-card">
+          <div className="readme-header">
+            <div className="readme-info">
+              {repoName && (
+                <span className="repo-name">{repoName}</span>
+              )}
             </div>
+            
+            <div className="readme-actions">
+              <Button
+                onClick={() => handleCopy(readme)}
+                variant="ghost"
+                size="sm"
+                className="copy-btn"
+              >
+                <Copy className="action-icon" />
+                {copied && <span className="copied-label">Copied!</span>}
+              </Button>
+            </div>
+          </div>
 
-            {isExpanded && (
-              <div className="readme-content">
-                <pre className="readme-text">{version.content}</pre>
-              </div>
-            )}
-
-            {!isExpanded && !isLatest && (
-              <div className="readme-preview">
-                {version.content.split('\n').slice(0, 2).join('\n')}...
-              </div>
-            )}
-          </Card>
-        )
-      })}
+          <div className="readme-content">
+            <pre className="readme-text">{readme}</pre>
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
-

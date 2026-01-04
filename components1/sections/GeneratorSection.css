@@ -167,6 +167,38 @@
   }
 }
 
+/* Mode Selector Tabs */
+.mode-selector {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.tabs-list {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  display: inline-flex;
+}
+
+.tab-trigger {
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tab-trigger[data-state="active"] {
+  background: rgba(99, 102, 241, 0.2);
+  color: rgb(99, 102, 241);
+}
+
+.tab-trigger:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .generator-section {

@@ -4,22 +4,38 @@ import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import OutputBox, { ReadmeVersion } from './OutputBox'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import OutputBox from './OutputBox'
 import FeaturesSection from './FeaturesSection'
 import './GeneratorSection.css'
+
+type Mode = 'readme' | 'template'
 
 export default function GeneratorSection() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [readmeHistory, setReadmeHistory] = useState<ReadmeVersion[]>([])
-  
+  const [currentReadme, setCurrentReadme] = useState<string | null>(null)
+  const [repoName, setRepoName] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [lastInput, setLastInput] = useState('')
-  const [hasGitHubUrl, setHasGitHubUrl] = useState(false)
+  const [mode, setMode] = useState<Mode>('readme')
 
   const [sessionId] = useState(() => `session-${Date.now()}-${Math.random()}`)
 
+  const placeholders = {
+    readme: 'Paste GitHub URL or add modifications...',
+    template: "Describe your project (e.g., 'Python CLI todo app')..."
+  }
+
+  const handleModeChange = (newMode: string) => {
+    setMode(newMode as Mode)
+    setInput('') // Clear input when switching modes
+    setError('')
+
+    setCurrentReadme(null)
+    setRepoName(null)
+    setHasSubmitted(false)
+  }
 
   const handleSubmit = async () => {
     if (!input.trim()) return
@@ -29,14 +45,7 @@ export default function GeneratorSection() {
     setIsLoading(true)
     
     const userInput = input
-    const githubUrlMatch = userInput.match(/github\.com\/([\w-]+)\/([\w.-]+)/)
-    const currentHasUrl = !!githubUrlMatch
-    
     setInput('')
-    
-    // Get the current README for iterations
-    
-    
 
     try {
       const response = await fetch('/api/generate-readme', {
@@ -44,7 +53,8 @@ export default function GeneratorSection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userInput,
-          sessionId: sessionId
+          sessionId: sessionId,
+          mode: mode
         })
       })
 
@@ -56,26 +66,13 @@ export default function GeneratorSection() {
         return
       }
 
-      const newVersion: ReadmeVersion = {
-        id: Date.now(),
-        content: data.readme,
-        timestamp: new Date(),
-        input: userInput,
-        repoName: data.repoName
-      }
-
-      setReadmeHistory(prev => {
-        const updated = [newVersion, ...prev]
-        return updated.slice(0, 2)
-      })
-
-      
-      setLastInput(userInput)
-      setHasGitHubUrl(currentHasUrl)
+      // Store current README
+      setCurrentReadme(data.readme)
+      setRepoName(data.metadata?.repoName || null)
       setIsLoading(false)
 
     } catch (err) {
-      console.error('Error:', err)  // ← Added console.log to see actual error
+      console.error('Error:', err)
       setError('Failed to generate README. Please try again.')
       setIsLoading(false)
     }
@@ -88,15 +85,14 @@ export default function GeneratorSection() {
     }
   }
 
-  const handleClearHistory = () => {
-    setReadmeHistory([])
+  const handleClear = () => {
+    setCurrentReadme(null)
+    setRepoName(null)
     setHasSubmitted(false)
     setError('')
-    setLastInput('')
-    setHasGitHubUrl(false)
   }
 
-  const hasOutput = isLoading || readmeHistory.length > 0
+  const hasOutput = isLoading || currentReadme !== null
 
   return (
     <>
@@ -106,9 +102,23 @@ export default function GeneratorSection() {
           <div className="generator-header">
             <h2 className="generator-title">Generate Your README</h2>
             <p className="generator-subtitle">
-              Paste your GitHub repository link or describe your project. Our AI will handle the rest.
+              Choose your mode and let our AI handle the rest.
             </p>
             <div className="title-underline"></div>
+          </div>
+
+          {/* Mode Selector Tabs */}
+          <div className="mode-selector">
+            <Tabs value={mode} onValueChange={handleModeChange}>
+              <TabsList className="tabs-list">
+                <TabsTrigger value="readme" className="tab-trigger">
+                  README
+                </TabsTrigger>
+                <TabsTrigger value="template" className="tab-trigger">
+                  Template
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className={`input-wrapper ${hasSubmitted ? 'input-minimized' : ''}`}>
@@ -117,7 +127,7 @@ export default function GeneratorSection() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="https://github.com/username/repository"
+                placeholder={placeholders[mode]}
                 className="generator-input"
                 disabled={isLoading}
               />
@@ -140,10 +150,10 @@ export default function GeneratorSection() {
 
           {hasSubmitted && (
             <OutputBox
-              history={readmeHistory}
+              readme={currentReadme}
+              repoName={repoName}
               isLoading={isLoading}
-              
-              onClearHistory={handleClearHistory}
+              onClear={handleClear}
             />
           )}
           
