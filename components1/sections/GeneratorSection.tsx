@@ -29,7 +29,7 @@ export default function GeneratorSection() {
 
   const handleModeChange = (newMode: string) => {
     setMode(newMode as Mode)
-    setInput('') // Clear input when switching modes
+    setInput('') 
     setError('')
 
     setCurrentReadme(null)

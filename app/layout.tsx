@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   verification: {
     google: "s_2M2MKkkIk8sFnEI9angdfTvyCe2qTxl9a5VTt6JqA"
   },
-  metadataBase: new URL('https://mreademz.vercel.app'), // Update with your actual domain
+  metadataBase: new URL('https://mreademz.vercel.app'), 
   title: {
     default: 'MdReademz - AI-Powered README Generator | Create Professional README Files',
     template: '%s | MdReademz'
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     title: 'MdReademz - AI-Powered README Generator',
     description: 'Generate professional README.md files for your GitHub projects in seconds using AI.',
     images: ['/logo.png'],
-    creator: '@mdreademz', // Update with your Twitter handle if you have one
+    creator: '@mdreademz', 
   },
   robots: {
     index: true,
@@ -87,11 +87,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Additional SEO tags */}
+        
+        <link rel="icon" href="/logo.png" type="image/png"></link>
         <link rel="canonical" href="https://mdreademz.vercel.app" />
         <meta name="theme-color" content="#000000" />
         
-        {/* Answer Engine Optimization - Structured Data */}
+        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -119,7 +120,7 @@ export default function RootLayout({
           }}
         />
         
-        {/* FAQ Schema for AEO */}
+        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

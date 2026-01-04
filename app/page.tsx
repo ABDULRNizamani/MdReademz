@@ -17,7 +17,6 @@ export default function HomePage() {
 
       <div id="generator">
         <GeneratorSection />
-        {/* GeneratorSection includes FeaturesSection with id="features" inside */}
       </div>
 
       <Footer />

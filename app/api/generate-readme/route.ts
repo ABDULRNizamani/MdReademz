@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validation = validateInput(message)
     if (!validation.valid) {
-      console.log('❌ Validation failed:', validation.reason)
+      
       return Response.json({
         error: validation.reason,
         type: "invalid_input"
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     
     // Check for multiple URLs (both modes)
     if (urls.length > 1) {
-      console.log('❌ Multiple URLs detected')
+      
       return Response.json({
         error: "Please provide only one GitHub URL at a time",
         type: "multiple_urls"
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       console.log('Parsed URL:', parsedUrl)
       
       if (!parsedUrl) {
-        console.log('❌ Invalid URL format')
+        
         return Response.json({
           error: "Invalid GitHub URL format",
           suggestion: "Use format: https://github.com/owner/repo",
@@ -113,11 +113,6 @@ export async function POST(request: NextRequest) {
       generationMode = previousReadme ? 'iteration' : 'new_template'
     }
     
-    console.log('✅ Generation mode:', generationMode)
-    
-    
-    // STAGE 2: GITHUB API DATA EXTRACTION
-    console.log('\n=== STAGE 2: GITHUB API ===')
     
     let repoData = null
     
@@ -126,7 +121,7 @@ export async function POST(request: NextRequest) {
       
       try {
         repoData = await fetchGitHubRepo(parsedUrl.owner, parsedUrl.repo)
-        console.log('✅ Repo data fetched:', repoData.name)
+        
       } catch (error: any) {
         console.log('❌ GitHub fetch failed:', error.message)
         
@@ -148,20 +143,18 @@ export async function POST(request: NextRequest) {
         }, { status: 500 })
       }
     } else {
-      console.log('⏭️  No URL provided, skipping GitHub API')
+      console.log(' No URL provided, skipping GitHub API')
     }
     
     
-    // STAGE 3: DATA FORMATTING & CACHING
-    console.log('\n=== STAGE 3: DATA FORMATTING ===')
-    
+   
     let formattedData = null
     
     if (repoData) {
       formattedData = formatRepoData(repoData, userText)
-      console.log('✅ Data formatted:', formattedData.repoName)
+      console.log(' Data formatted:', formattedData.repoName)
     } else {
-      console.log('⏭️  No repo data to format')
+      console.log('No repo data to format')
     }
     
     
@@ -175,28 +168,25 @@ export async function POST(request: NextRequest) {
       previousReadme
     })
     
-    console.log('✅ Prompt built, length:', prompt.length)
+    console.log(' Prompt built, length:', prompt.length)
     
     
-    // STAGE 5: GROQ API CALL
+   
     console.log('\n=== STAGE 5: GROQ API ===')
     
     let generatedReadme: string
     
     try {
       generatedReadme = await callGroq(prompt)
-      console.log('✅ README generated, length:', generatedReadme.length)
+     
     } catch (error: any) {
-      console.log('❌ Groq API failed:', error.message)
+      console.log('Groq API failed:', error.message)
       return Response.json({
         error: "AI service unavailable. Please try again",
         type: "ai_error"
       }, { status: 500 })
     }
     
-    
-    // STAGE 6: SESSION UPDATE & RETURN
-    console.log('\n=== STAGE 6: SAVE & RETURN ===')
     
     saveSession(sessionKey, generatedReadme)
     console.log('✅ Session updated for mode:', mode)
@@ -212,7 +202,7 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error: any) {
-    console.error('💥 Unexpected Error:', error)
+    console.error('Unexpected Error:', error)
     return Response.json({
       error: "Something went wrong",
       type: "server_error",
@@ -222,7 +212,7 @@ export async function POST(request: NextRequest) {
 }
 
 
-// ============= STAGE 1 HELPERS =============
+
 
 function validateInput(input: string): { valid: boolean; reason?: string } {
   const trimmed = input.trim()
@@ -265,7 +255,7 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 }
 
 
-// ============= STAGE 2 HELPERS =============
+
 
 async function fetchGitHubRepo(owner: string, repo: string) {
   const url = `https://api.github.com/repos/${owner}/${repo}`
@@ -306,7 +296,7 @@ async function fetchGitHubRepo(owner: string, repo: string) {
 }
 
 
-// ============= STAGE 3 HELPERS =============
+
 
 function formatRepoData(repoData: any, userText: string) {
   return {
@@ -350,7 +340,6 @@ function saveSession(sessionKey: string, readme: string) {
 }
 
 
-// ============= STAGE 4 HELPERS =============
 
 function buildPrompt(params: {
   mode: 'new_with_url' | 'new_template' | 'iteration'
@@ -448,7 +437,7 @@ Required/Core Sections:
 }
 
 
-// ============= STAGE 5 HELPERS =============
+
 
 async function callGroq(prompt: string): Promise<string> {
   if (!GROQ_API_KEY) {
