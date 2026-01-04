@@ -455,8 +455,21 @@ function buildPrompt(params: {
     // TODO: Build iteration prompt
     // Include: previousReadme + userText (modification request)
     // Instruction: "Update the README based on the request"
-    return ""
-  }
+    return `You are a professional README editor.
+
+      Current README:
+     ${previousReadme}
+
+     user's modification request: "${userText}"
+
+     Instructions:
+     - Apply only the changes requested by the user
+     - Do NOT invent any new information
+     - Keep all other sections unchanged
+     - Return the COMPLETE updated README (not just modified parts)
+     - Output only markdown content, do not include markdown code fences (no \`\`\`markdown)
+     `
+    }
   
   if (mode === 'new_with_url' && repoData) {
     // TODO: Build new README prompt with repo data
@@ -464,14 +477,89 @@ function buildPrompt(params: {
     // Include userText as additional requirements (if exists)
     // Sections to include: Title, Description, Installation, Usage, Contributing, License
     // Conditional sections: Topics (if exists), Homepage (if exists)
-    return ""
+    return `
+    You are a professional README generator. Create clean, well-organized READMEs using only the provided data.
+    
+   Repository Information:
+   - Name: ${repoData.repoName}
+   - Description: ${repoData.description}
+   - Language: ${repoData.language}
+   - Stars: ${repoData.stars}
+   - Forks: ${repoData.forks}
+   - Topics: ${repoData.topics.join(', ')}
+   - License: ${repoData.license}
+   - Homepage: ${repoData.homepage || 'None'}
+   - Default Branch: ${repoData.defaultBranch}
+
+   ${userText ? `Additional requirements from user: "${userText}"` : ''}
+
+
+   CRITICAL RULES - DO NOT VIOLATE:
+  
+   - Use ONLY the provided repository data
+   - Do NOT invent contact information (emails, phone numbers, social media handles)
+   - Do NOT invent specific installation commands beyond basic language-specific ones
+   - Do NOT invent project features not mentioned in the description
+   - Do NOT invent URLs, links, or external resources not provided
+   - For Installation section: use ONLY generic commands based on language (e.g., "npm install" for JavaScript, "pip install" for Python)
+   - If critical information is missing, use "[To be added]" as placeholder
+   - Do NOT add "Contact" or "Authors" sections unless explicitly in data
+   - Output only markdown content, no code fences
+   
+   Required/Core Sections:
+
+   Title - Project name (from repoData.repoName)
+   Description - What the project does (from repoData.description)
+   Installation - How to install (generic based on language)
+   Usage - How to use it (generic placeholder)
+   Contributing - How to contribute (generic)
+   License - License info (from repoData.license)
+
+   Conditional Sections (only if data exists):
+
+   Topics/Tags - If repoData.topics has items
+   Homepage - If repoData.homepage exists
+   Features - Only if mentioned in description or userText
+
+   Optional/Nice-to-have:
+
+   Requirements/Prerequisites - Dependencies
+   Documentation - Link to docs
+   Support - How to get help (generic, no contact info!)
+   
+   `
   }
   
   if (mode === 'new_template') {
     // TODO: Build template prompt
     // Include: userText (project description)
     // Generate generic template structure
-    return ""
+    return `You are a professional README Template generator. Create clean, well-organized README Template - Use ONLY the information from the user's project description
+    
+    CRITICAL RULES - DO NOT VIOLATE:
+  
+   - Use ONLY the information from the user's project description
+   - Do NOT invent contact information (emails, phone numbers, social media handles)
+   - Do NOT invent specific installation commands beyond basic language-specific ones
+   - Do NOT invent project features not mentioned in the description
+   - Do NOT invent URLs, links, or external resources not provided
+   - For Installation section: use generic placeholders like "[Install command here]"
+   - If critical information is missing, use "[To be added]" as placeholder
+   - Do NOT add "Contact" or "Authors" sections unless explicitly in data
+   - Output only markdown content, no code fences
+
+   Project description: ${userText} this is description of project make template keeping rules given above in mind
+   Generate a professional README template. Use generic placeholders for sections where specific information is not provided.
+
+   Required/Core Sections:
+
+   Title - Project name 
+   Description - What the project does 
+   Installation - How to install 
+   Usage - How to use it 
+   Contributing - How to contribute (generic)
+   License - License info 
+    ` 
   }
   
   return ""
